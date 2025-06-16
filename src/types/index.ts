@@ -129,3 +129,16 @@ export interface RefundResponse {
   message: string;
   errorCode?: string;
 }
+
+
+export interface UpiDetails {
+  customerName: string;
+  customerMobile: string;
+  customerEmail: string;
+  upiId: string;
+}
+
+export interface UpiDetailsFormProps {
+  upiDetails: UpiDetails;
+  onChange: (details: UpiDetails) => void;
+}

@@ -1,59 +1,83 @@
-import { useState } from 'react';
-import { BillingAddress, CardDetails, PaymentResponse } from './types';
-import { mockOrder, paymentMethods } from './data/mockData';
-import ibmPaymentGateway from './services/ibmPaymentGateway';
-import OrderSummary from './components/OrderSummary';
-import PaymentMethodSelector from './components/PaymentMethodSelector';
-import BillingAddressForm from './components/BillingAddressForm';
-import CardDetailsForm from './components/CardDetailsForm';
-import PaymentProcessing from './components/PaymentProcessing';
-import { Shield, CreditCard, ArrowRight } from 'lucide-react';
+import { useState } from "react";
+import {
+  BillingAddress,
+  CardDetails,
+  PaymentResponse,
+  UpiDetails,
+  UpiDetailsFormProps,
+} from "./types";
+import { mockOrder, paymentMethods } from "./data/mockData";
+import ibmPaymentGateway from "./services/ibmPaymentGateway";
+import OrderSummary from "./components/OrderSummary";
+import PaymentMethodSelector from "./components/PaymentMethodSelector";
+import BillingAddressForm from "./components/BillingAddressForm";
+import UpiDetailsForm from "./components/CardDetailsForm";
+import PaymentProcessing from "./components/PaymentProcessing";
+import { Shield, CreditCard, ArrowRight } from "lucide-react";
 
 function App() {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
-  const [paymentStatus, setPaymentStatus] = useState<PaymentResponse | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
+  const [paymentStatus, setPaymentStatus] = useState<PaymentResponse | null>(
+    null
+  );
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const [billingAddress, setBillingAddress] = useState<BillingAddress>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "",
   });
 
-  const [cardDetails, setCardDetails] = useState<CardDetails>({
-    cardNumber: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvv: '',
-    cardholderName: ''
+  const [UpiDetails, setUpiDetails] = useState<UpiDetails>({
+    customerName: "",
+    customerMobile: "",
+    customerEmail: "",
+    upiId: "",
   });
 
   const validateForm = () => {
     // Validate billing address
-    const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zipCode', 'country'];
+    const requiredFields = [
+      "firstName",
+      "lastName",
+      "email",
+      "phone",
+      "address",
+      "city",
+      "state",
+      "zipCode",
+      "country",
+    ];
     for (const field of requiredFields) {
       if (!billingAddress[field as keyof BillingAddress]) {
-        alert(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+        alert(
+          `Please fill in ${field.replace(/([A-Z])/g, " $1").toLowerCase()}`
+        );
         return false;
       }
     }
 
     // Validate card details if card payment is selected
-    if (selectedPaymentMethod === 'card') {
-      if (!cardDetails.cardNumber || !cardDetails.expiryMonth || !cardDetails.expiryYear || !cardDetails.cvv || !cardDetails.cardholderName) {
-        alert('Please fill in all card details');
+    if (selectedPaymentMethod === "card") {
+      if (
+        !UpiDetails.customerName ||
+        !UpiDetails.customerMobile ||
+        !UpiDetails.customerEmail ||
+        !UpiDetails.upiId
+      ) {
+        alert("Please fill in all card details");
         return false;
       }
 
       // Validate card number
-      if (!ibmPaymentGateway.validateCard(cardDetails.cardNumber)) {
-        alert('Please enter a valid card number');
+      if (!ibmPaymentGateway.validateCard(UpiDetails.upiId)) {
+        alert("Please enter a valid card number");
         return false;
       }
     }
@@ -65,7 +89,12 @@ function App() {
     if (!validateForm()) return;
 
     setIsProcessing(true);
-    setPaymentStatus({ success: false, status: 'processing', message: 'Processing your payment...', transactionId: 'pending' });
+    setPaymentStatus({
+      success: false,
+      status: "processing",
+      message: "Processing your payment...",
+      transactionId: "pending",
+    });
 
     try {
       const paymentRequest = {
@@ -74,13 +103,13 @@ function App() {
         currency: mockOrder.currency,
         paymentMethod: selectedPaymentMethod,
         billingAddress,
-        ...(selectedPaymentMethod === 'card' && { cardDetails })
+        ...(selectedPaymentMethod === "card" && { UpiDetails }),
       };
 
       const response = await ibmPaymentGateway.processPayment(paymentRequest);
       setPaymentStatus(response);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     } finally {
       setIsProcessing(false);
     }
@@ -97,13 +126,17 @@ function App() {
                 <CreditCard className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">IBM Payment Gateway</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  IBM Payment Gateway
+                </h1>
                 <p className="text-sm text-gray-600">Secure Checkout</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
               <Shield className="h-5 w-5 text-green-500" />
-              <span className="text-sm text-green-600 font-medium">SSL Secured</span>
+              <span className="text-sm text-green-600 font-medium">
+                SSL Secured
+              </span>
             </div>
           </div>
         </div>
@@ -132,13 +165,13 @@ function App() {
             </div>
 
             {/* Card Details (only show if card payment is selected) */}
-            {selectedPaymentMethod === 'card' && (
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-                <CardDetailsForm
-                  cardDetails={cardDetails}
-                  onChange={setCardDetails}
+            {selectedPaymentMethod === "card" && (
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+                <UpiDetailsForm
+                  upiDetails={UpiDetails}
+                  onChange={setUpiDetails}
                 />
-              </div>
+                </div>
             )}
 
             {/* Payment Button */}
@@ -160,7 +193,7 @@ function App() {
                   </>
                 )}
               </button>
-              
+
               <div className="flex items-center justify-center space-x-4 mt-4 text-xs text-gray-500">
                 <span>🔒 256-bit SSL encryption</span>
                 <span>•</span>
